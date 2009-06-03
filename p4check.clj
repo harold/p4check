@@ -2,39 +2,33 @@
 				'(java.lang ProcessBuilder)
 				'(java.util.concurrent CountDownLatch))
 
-(def files [])
-
 (defn p4Edit [path]
   (let [process (new ProcessBuilder ["p4" "edit" path])]
 		(println path)
-		(. process start)))
+		(.start process)))
 
 (defn watchFilter [path]
   (let [extension (.substring path (+ 1 (.lastIndexOf path ".")))]
 		(some #{extension} ["cpp" "cxx" "h"
 												"xml" "inl"	"c"
 												"vcproj" "sln"
-												"js" "build"
-												"include"])))
+												"js" "build" "hxx"
+												"include" "hpp"])))
 
 (defn maybe-p4Edit [file]
-	(let [path (. file getAbsolutePath)]
-		(when (. file canWrite) ; File is *not* read only.
+	(let [path (.getAbsolutePath file)]
+		(when (.canWrite file) ; File is *not* read only.
 			(when (watchFilter path)
 				(p4Edit path)))))
 	
-(defn build-list [file]
-	(if (. file isFile)
-		(def files (conj files file))
-	  (dorun (map #(build-list %1) (. file listFiles)))))
+(defn create-lazy-dir-sequence [base-java-file]
+	(tree-seq (memfn isDirectory) #(seq (.listFiles %1)) base-java-file))
 
-(def base (new File (System/getProperty "user.dir")))
+(defn create-lazy-file-sequence [base-java-file]
+	(filter #(.isFile %) (create-lazy-dir-sequence base-java-file)))
 
-(dorun (map #(build-list %1) (. base listFiles)))
-
-(println (count files) "files to process..")
-
-(def items (ref files))
+(def base-file (new File (System/getProperty "user.dir")))
+(def items (ref (create-lazy-file-sequence base-file)))
 
 (defn get-next-item []
 	(dosync
