@@ -2,9 +2,13 @@
         '(java.lang ProcessBuilder)
         '(java.util.concurrent CountDownLatch))
 
+(def touched-paths (ref []))
+
 (defn p4Edit [path]
   (let [process (new ProcessBuilder ["p4" "edit" path])]
-    (println path)
+    (dosync (alter touched-paths conj path))
+    (print ".")
+    (flush)
     (.start process)))
 
 (defn watchFilter [path]
@@ -53,3 +57,4 @@
 (.await countdown-latch)
 (shutdown-agents)
 (println "Done!")
+(doall (map #(println %) @touched-paths))
