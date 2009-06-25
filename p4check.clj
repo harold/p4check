@@ -19,7 +19,7 @@
 
 (defn maybe-p4Edit [file]
   (let [path (.getAbsolutePath file)]
-    (dosync (alter considered-file-count + 1))
+    (dosync (alter considered-file-count inc))
     (when (.canWrite file) ; File is *not* read only.
       (when (watchFilter path)
         (p4Edit path)))))
