@@ -2,6 +2,7 @@
         '(java.lang ProcessBuilder)
         '(java.util.concurrent CountDownLatch))
 
+(def considered-file-count (ref 0))
 (def touched-paths (ref []))
 
 (defn p4Edit [path]
@@ -18,6 +19,7 @@
 
 (defn maybe-p4Edit [file]
   (let [path (.getAbsolutePath file)]
+    (dosync (alter considered-file-count + 1))
     (when (.canWrite file) ; File is *not* read only.
       (when (watchFilter path)
         (p4Edit path)))))
@@ -57,4 +59,5 @@
 (.await countdown-latch)
 (shutdown-agents)
 (println "Done!")
+(println "Considered" @considered-file-count "files.")
 (doall (map #(println %) @touched-paths))
