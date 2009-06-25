@@ -2,6 +2,11 @@
         '(java.lang ProcessBuilder)
         '(java.util.concurrent CountDownLatch))
 
+;; Timer
+(defn get-time [] (System/currentTimeMillis))
+(def start-time (get-time))
+
+;; Reporting
 (def considered-file-count (ref 0))
 (def touched-paths (ref []))
 
@@ -58,6 +63,8 @@
 
 (.await countdown-latch)
 (shutdown-agents)
+
 (println "Done!")
-(println "Considered" @considered-file-count "files.")
+(def elapsed-time-seconds (/ (- (get-time) start-time) 1000.0))
+(println "Considered" @considered-file-count "files in" elapsed-time-seconds "seconds." )
 (doall (map #(println %) @touched-paths))
